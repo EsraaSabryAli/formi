@@ -554,35 +554,54 @@ class _StepperFormScreenState extends State<StepperFormScreen> {
           isActive: _currentStep >= 2,
         ),
         Step(
-          title: Text(
-            "Required Documents",
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Color.fromRGBO(2, 27, 61, 1), fontSize: 20),
-          ),
-          content: Column(
-            children: [
-              ElevatedButton(
-                onPressed: pickFile,
-                child: Text("Upload Car Document"),
-              ),
-              if (filePickerError !=
-                  null) // Check if there's an error to display
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    filePickerError!,
-                    style: TextStyle(color: Colors.red, fontSize: 14),
-                  ),
+            title: Text(
+              "Required Documents",
+              overflow: TextOverflow.ellipsis,
+              style:
+                  TextStyle(color: Color.fromRGBO(2, 27, 61, 1), fontSize: 20),
+            ),
+            content: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: pickFile,
+                  child: Text("Upload Car Document"),
                 ),
-            ],
-          ),
-
-          isActive: _currentStep >= 3,
-          state: uploadedFile != null
-              ? StepState.complete
-              : StepState.error, // Show error state if no file is uploaded
-        ),
+                if (filePickerError !=
+                    null) // Check if there's an error to display
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      filePickerError!,
+                      style: TextStyle(color: Colors.red, fontSize: 14),
+                    ),
+                  ),
+              ],
+            ),
+            isActive: _currentStep >= 3,
+            state: uploadedFile != null ? StepState.complete : StepState.indexed
+            // : StepState.error, // Show error state if no file is uploaded
+            ),
       ];
+  void _resetForm() {
+    _formKey.currentState?.reset();
+    nameController.clear();
+    idController.clear();
+    emailController.clear();
+    phoneController.clear();
+    licensePlateNumberController.clear();
+    carTypeController.clear();
+    carModelController.clear();
+    carPriceController.clear();
+    selectedInsuranceType = null;
+    selectedInsuranceDuration = null;
+    roadsideAssistance = false;
+    replacementCar = false;
+    driverInsurance = false;
+    uploadedFile = null;
+    filePickerError = null;
+    _currentStep = 0;
+    isCompleted = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -626,14 +645,22 @@ class _StepperFormScreenState extends State<StepperFormScreen> {
                   currentStep: _currentStep,
                   steps: getSteps(),
                   onStepContinue: () {
-                    if (_formKey.currentState!.validate()) {
-                      setState(() {
-                        if (_currentStep < getSteps().length - 1) {
-                          _currentStep += 1;
-                        } else {
+                    if (_currentStep < getSteps().length - 1) {
+                      setState(() => _currentStep++);
+                    } else {
+                      if (_formKey.currentState!.validate() &&
+                          uploadedFile != null) {
+                        setState(() {
                           isCompleted = true;
-                        }
-                      });
+                        });
+                      } else {
+                        // Show an error message or prevent submission
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content:
+                                  Text('Please upload the required document.')),
+                        );
+                      }
                     }
                   },
                   onStepTapped: (step) => setState(() => _currentStep = step),
@@ -691,8 +718,7 @@ class _StepperFormScreenState extends State<StepperFormScreen> {
               ),
               onPressed: () {
                 setState(() {
-                  isCompleted = false;
-                  _currentStep = 0;
+                  _resetForm();
                 });
               },
               child: Text(
